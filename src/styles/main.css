@@ -1,3 +1,11 @@
+/*
+  Styles
+ */
+footer {
+  border-top: 1px solid #C2C2C2;
+  padding-top: 5px;
+}
+
 /*!
  * Bootstrap v3.3.2 (http://getbootstrap.com)
  * Copyright 2011-2015 Twitter, Inc.

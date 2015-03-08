@@ -5,6 +5,7 @@ var assign = require('object-assign');
 var AppDispatcher = assign(new Dispatcher(), {
 
   handleServerAction: function(action) {
+    console.log('dispatch', action);
     var payload = {
       source: Constants.ActionSources.SERVER_ACTION,
       action: action
@@ -17,6 +18,7 @@ var AppDispatcher = assign(new Dispatcher(), {
       source: Constants.ActionSources.VIEW_ACTION,
       action: action
     };
+    console.log('dispatchView', payload);
     this.dispatch(payload);
   }
 

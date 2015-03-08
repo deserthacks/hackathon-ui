@@ -2,10 +2,22 @@ var keyMirror = require('react/lib/keyMirror');
 
 module.exports = {
 
-  CHANGE_EVENT: 'change',
+  CHANGE_EVENT: 'CHANGE',
 
   ActionTypes: keyMirror({
-    ADD_TASK: null
+    ADD_TASK: null,
+
+    TRANSITION: 'TRANSITION',
+
+    LOGIN_ATTEMPT: 'LOGIN_ATTEMPT',
+    JOIN_ATTEMPT: 'JOIN_ATTEMPT',
+    SUCCESSFUL_AUTH: 'SUCCESSFUL_AUTH',
+    FAILED_AUTH: 'FAILED_AUTH',
+    DESTROY_SESSION: 'DESTROY_SESSION',
+
+    SUBMISSION_SUCCESS: 'SUBMISSION_SUCCESS',
+    SUBMISSION_FAIL: 'SUBMISSION_FAIL',
+    RETRIEVE_SUBMISSION: 'RETRIEVE_SUBMISSION'
   }),
 
   ActionSources: keyMirror({
