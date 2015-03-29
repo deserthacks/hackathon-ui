@@ -28,6 +28,9 @@ module.exports = {
     dest: dest + '/js',
     outputName: 'index.js',
   },
+  jshint: {
+    src: src + '/js/**/*.js'
+  },
   html: {
     src: 'src/index.html',
     dest: dest
