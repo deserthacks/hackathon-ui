@@ -1,3 +1,6 @@
+'use strict';
+
+var h = require('react-hyperscript');
 var React = require('react');
 var Input = require('react-bootstrap/lib/Input');
 
@@ -23,36 +26,22 @@ var Application = React.createClass({
     var credentials = {
       email: this.refs.email.getInputDOMNode().value,
       password: this.refs.password.getInputDOMNode().value
-    }
+    };
     ApplicationActions.submitApplication(credentials);
   },
 
   render: function() {
     return (
-      <div className="container">
-        <div className="row">
-          <div className="col-md-6">
-            <form className="form-horizontal" onSubmit={this.handleSubmit}>
-              <Input type="text" ref="github" label='GitHub Handle' />
-              <div className="form-group">
-                <div className="col-md-6">
-                  <p>Is this your first hackathon?</p>
-                  <Input type="radio" name="hackathon-first-time" label="Yes" />
-                  <Input type="radio" name="hackathon-first-time" label="No" />
-                </div>
-              </div>
-              <Input type="textarea" ref="experience" label='Describe your favorite project' />
-              <Input type="submit" value="Submit" />
-            </form>
-          </div>
-        </div>
-      </div>
+      h('div', [
+        h('p', 'temporary application page')
+      ])
     );
   },
 
   _onChange: function() {
     return null;
   }
+
 });
 
 module.exports = Application;

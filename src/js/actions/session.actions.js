@@ -1,9 +1,12 @@
+'use strict';
+
 var request = require('superagent');
 
 var AppDispatcher = require('../dispatchers/AppDispatcher');
 var Constants = require('../constants/AppConstants');
 var SessionProxy = require('../utils/SessionProxy');
-var config = require('../config');
+var config = require('../config'),
+    router = require('react-router');
 
 var SessionActions = {
   sessionTimeout: sessionTimeout,
@@ -15,54 +18,65 @@ var SessionActions = {
 };
 
 function sessionTimeout() {
-  AppDispatcher.handleServerAction({
+  AppDispatcher.dispatch({
     type: Constants.ActionTypes.DESTROY_SESSION
   });
 }
 
-function loginAttempt(credentials) {
-  _auth(credentials, Constants.ActionTypes.LOGIN_ATTEMPT, "login");
-}
-
-function registerAttempt(credentials) {
-  _auth(credentials, Constants.ActionTypes.JOIN_ATTEMPT, "join");
-}
-
-function logout() {
-  SessionProxy.destroy(_logoutSuccess, function(response) {
-    console.error("Something went wrong", response);
+function loginAttempt(credentials, payload) {
+  _auth(credentials, Constants.ActionTypes.LOGIN_ATTEMPT, 'login', function(err, res) {
+    payload.router.transitionTo('/');
   });
 }
 
-function authSuccess(response) {
-  var token = response.headers['x-bearer-token'];
-  AppDispatcher.handleServerAction({
+function registerAttempt(credentials, payload) {
+  _auth(credentials, Constants.ActionTypes.JOIN_ATTEMPT, 'register', function(err, res) {
+    if(err) return console.error('Error during user registration', err);
+    payload.router.transitionTo('/');
+  });
+}
+
+function logout(router) {
+  SessionProxy.destroy(function(res) {
+    AppDispatcher.dispatch({
+      type: Constants.ActionTypes.DESTROY_SESSION,
+      res: res
+    });
+  }, function(err) {
+    console.error('Something went wrong', err);
+  });
+}
+
+function authSuccess(res) {
+  var token = res.headers['x-bearer-token'];
+  AppDispatcher.dispatch({
     type: Constants.ActionTypes.SUCCESSFUL_AUTH,
     token: token,
-    user: response.body
+    user: res.body
   });
 }
 
-function authFail(response) {
-  AppDispatcher.handleServerAction({
+function authFail(res) {
+  AppDispatcher.dispatch({
     type: Constants.ActionTypes.FAILED_AUTH,
-    error: response.body.error
+    error: res.body.error
   });
 }
 
-function _logoutSuccess(response) {
-  AppDispatcher.handleServerAction({
+function _logoutSuccess(res) {
+  AppDispatcher.dispatch({
     type: Constants.ActionTypes.DESTROY_SESSION,
-    response: response
+    res: res
   });
+
 }
 
-function _auth(credentials, actionType, call) {
-  AppDispatcher.handleViewAction({
+function _auth(credentials, actionType, call, done) {
+  AppDispatcher.dispatch({
     type: actionType
   });
 
-  SessionProxy[call](credentials, authSuccess, authFail);
+  SessionProxy[call](credentials, authSuccess, authFail, done);
 
 }
 

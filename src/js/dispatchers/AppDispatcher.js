@@ -1,3 +1,5 @@
+'use strict';
+
 var Dispatcher = require('flux').Dispatcher;
 var Constants = require('../constants/AppConstants');
 var assign = require('object-assign');

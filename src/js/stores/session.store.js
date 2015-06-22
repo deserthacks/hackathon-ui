@@ -1,11 +1,19 @@
+'use strict';
+
 var AppDispatcher = require('../dispatchers/AppDispatcher');
 var EventEmitter = require('events').EventEmitter;
 var Constants = require('../constants/AppConstants');
 var assign = require('object-assign');
 
+var AppProxy = require('../utils/AppProxy'),
+    UserProxy = require('../utils/UserProxy');
+
 // Local private variables
 var _user = null;
+// noep var _attendee = null;
 var _token = null;
+
+var isAttendee = null;
 
 var SessionStore = assign(EventEmitter.prototype, {
 
@@ -17,73 +25,100 @@ var SessionStore = assign(EventEmitter.prototype, {
     this.removeListener(Constants.CHANGE_EVENT, callback);
   },
 
-  emitChange: function() {
-    this.emit(Constants.CHANGE_EVENT);
+  emitChange: function(data) {
+    this.emit(Constants.CHANGE_EVENT, data);
   },
 
+  /**
+   * Return current session objects
+   * @return {Object} Contains token and user
+   */
   current: function() {
-    if (!_token || !_user) {
-      _checkStore();
-    }
+    _checkStore();
     return {
       token: _token,
-      user: _user
+      user: _user,
+      attendee: _attendee,
+      isAttendee: isAttendee
     };
   },
 
+  /**
+   * Retrieves the user object from the store
+   * if it exists
+   * @return {Object} user object
+   */
   getUser: function() {
-    if(!_user) {
-      _checkStore();
-    }
+    _checkStore();
     return _user;
   },
 
+  /**
+   * Retrieves the token string from the store
+   * if it exists
+   * @return {String}
+   */
   getToken: function() {
-    if(!_token) {
-      _checkStore();
-    }
+    _checkStore();
     return _token;
   },
 
+  /**
+   * Returns whether the user session is active
+   * or not
+   * @return {Boolean}
+   */
+  // TODO: Remove/find a better name for this
+  // any session would be "active" just by a user
+  // being on the site. Isn't clear what this is for.
   isActive: function() {
-    if (!_user || !_token) {
-      _retrieveStore();
-    }
-    console.log(!!_token, !!_user);
+    _checkStore();
     return !!_token && !!_user;
   },
 
+  /**
+   * Returns whether the current user is an
+   * attendee of the current hackathon
+   * @return {Boolean}
+   */
+  // TODO: Generalize this to not just and attendee
+  // but for what ever user type someone might be
+  isAttendee: function() {
+    if(!isAttendee) _checkUser();
+    return isAttendee;
+  },
+
   dispatcherIndex: AppDispatcher.register(function(payload) {
-    var action = payload.action;
+    var action = payload;
 
     switch(action.type) {
+      case Constants.ActionTypes.AUTH_REQUEST:
+        SessionProxy.login();
       case Constants.ActionTypes.SUCCESSFUL_AUTH:
         _create(action);
-        SessionStore.emitChange(true);
+        SessionStore.emitChange('success');
         break;
 
       case Constants.ActionTypes.FAILED_AUTH:
-        SessionStore.emitChange(false, action.error);
+        SessionStore.emitChange('error', action.error);
         break;
 
       case Constants.ActionTypes.DESTROY_SESSION:
+      console.log('DESTROY_SESSION', action);
         _destroy();
         SessionStore.emitChange();
         break;
-
-      default:
-        console.log('Invalid action type');
     }
   })
 
 });
 
 function _create(data) {
-  var user = JSON.stringify(data.user);
   _update({
-    user: user,
+    user: data.user,
     token: data.token
   });
+  _checkUser(data.user);
 }
 
 function _destroy() {
@@ -95,9 +130,26 @@ function _destroy() {
   window.localStorage['user'] = '';
 }
 
-function _update(session) {
-  _setUser(session.user);
-  _setToken(session.token);
+function _checkUser(user) {
+  if(!user) {
+    user = SessionStore.getUser();
+  }
+  UserProxy.checkUser(user, _token, function(err, res) {
+    if(err) return console.error('An error occured:', err);
+
+    // Parse the response body
+    if(typeof res.body === Object) {
+      isAttendee = true;
+      _attendee = res.body;
+    } else {
+      isAttendee = false;
+    }
+  });
+}
+
+function _update(data) {
+  _setUser(JSON.stringify(data.user));
+  _setToken(JSON.stringify(data.token));
 }
 
 /**
@@ -113,7 +165,7 @@ function _setUser(user) {
 
 /**
  * Set the token for session
- * @param {String} token
+ * @param {string} token
  */
 function _setToken(token) {
   if (token || token === null) {
@@ -124,7 +176,7 @@ function _setToken(token) {
 
 /**
  * Store user in localStorage
- * @param {Object} user
+ * @param {object} user
  */
 function _storeUser(user) {
   window.localStorage['user'] = user;
@@ -145,10 +197,16 @@ function _checkStore() {
 }
 
 function _retrieveStore() {
-  return {
-    token: window.localStorage['token'],
-    user: window.localStorage['user']
+  if(window.localStorage['token'] && window.localStorage['user']) {
+    return {
+      token: JSON.parse(window.localStorage['token']),
+      user: JSON.parse(window.localStorage['user'])
+    };
   }
+  return {
+    token: null,
+    user: null
+  };
 }
 
 module.exports = SessionStore;

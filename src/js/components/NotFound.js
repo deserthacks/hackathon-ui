@@ -1,6 +1,10 @@
+'use strict';
+
+var h = require('react-hyperscript');
 var React = require('react');
 
 var NotFound = React.createClass({
+
   getInitialState: function() {
     return {};
   },
@@ -10,11 +14,12 @@ var NotFound = React.createClass({
 
   render: function() {
     return (
-      <div className="text-center">
-        <h3>Oops, route not found</h3>
-      </div>
+      h('div', {className: 'text-center'}, [
+        h('h3', 'Hmm, a page you will not find here.')
+      ])
     );
   }
+
 });
 
 module.exports = NotFound;

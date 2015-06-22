@@ -1,0 +1,92 @@
+'use strict';
+
+var assign = require('object-assign');
+var EventEmitter = require('events').EventEmitter;
+var Immutable = require('immutable');
+
+var AppDispatcher = require('../dispatchers/AppDispatcher');
+var Constants = require('../constants/AppConstants');
+
+var Application = Immutable.Record({
+  response: [],
+  role: undefined,
+  hackathon: undefined,
+  user: undefined,
+  createdAt: new Date()
+});
+
+var State = Immutable.Record({
+  receivingSubmissions: undefined,
+  decisionsDispatched: undefined
+});
+
+function _updateApplication(data, cb) {
+  Application.clear();
+  Application = new Application({
+    response: data.repsonse,
+    role: data.role,
+    hackathon: data.hackathon,
+    user: _getUser().id
+  });
+  cb();
+}
+
+function _updateState(data, cb) {
+  State.clear();
+  State = new State({
+    receivingSubmissions: data.receivingSubmissions,
+    decisionsDispatched: data.decisionsDispatched
+  });
+  cb();
+}
+
+function _getUser() {
+  return SessionStore.getUser();
+}
+
+var ApplicationStore = assign(EventEmitter.prototype, {
+
+  addChangeListener: function(callback) {
+    this.on(Constants.CHANGE_EVENT, callback);
+  },
+
+  removeChangeListener: function(callback) {
+    this.removeListener(Constants.CHANGE_EVENT, callback);
+  },
+
+  emitChange: function() {
+    this.emit(Constants.CHANGE_EVENT);
+  },
+
+  dispatcherIndex: AppDispatcher.register(function(payload) {
+    var action = payload;
+
+    switch(action.type) {
+      case Constants.ActionTypes.SUBMISSION_REQUEST:
+        ApplicationAPI.submitApplication();
+        break;
+
+      case Constants.ActionTypes.SUBMISSION_REQUEST_SUCCESS:
+        var application = action.data;
+        updateApplication(application, function() {
+          ApplicationStore.emitChange();
+        });
+        break;
+
+      case Constants.ActionTypes.SUBMISSION_REQUEST_FAIL:
+        ApplicationStore.emitChange();
+        break;
+
+      case Constants.ActionTypes.RETRIEVE_APPLICATION:
+        var options = action.options;
+        ApplicationAPI.retrieveApplication(options);
+        break;
+
+      case Constants.ActionTypes.RETRIEVE_APPLICATION_STATE:
+      
+    }
+  })
+
+});
+
+module.exports = ApplicationStore;
